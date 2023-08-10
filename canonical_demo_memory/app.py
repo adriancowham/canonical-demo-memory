@@ -7,6 +7,7 @@ import os
 import re
 from typing import Any, Dict
 
+import faiss
 # Import necessary libraries
 import streamlit as st
 from langchain.callbacks import get_openai_callback
@@ -15,10 +16,14 @@ from langchain.chains.conversation.memory import ConversationEntityMemory
 from langchain.chains.conversation.prompt import \
     ENTITY_MEMORY_CONVERSATION_TEMPLATE
 from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import (ChatPromptTemplate,
                                     HumanMessagePromptTemplate,
                                     SystemMessagePromptTemplate)
+from langchain.retrievers.llama_index import LlamaIndexRetriever
+from llama_index import StorageContext, VectorStoreIndex, download_loader
+from llama_index.vector_stores.faiss import FaissVectorStore
 
 from canonical_demo_memory.core.caching import bootstrap_caching
 from canonical_demo_memory.core.chunking import chunk_file
@@ -28,7 +33,6 @@ from canonical_demo_memory.core.qa import query_folder
 from ui import (display_file_read_error, is_file_valid, is_open_ai_key_valid,
                 is_query_valid, wrap_doc_in_html)
 
-# EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
 MODEL = "openai"
 EMBEDDING = "openai"
@@ -42,21 +46,7 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
 # bootstrap_caching()
 
 system_template = """
-You are knowledgeable about the reference book called the Fiske Guide to Colleges. You are familiar with the Fiske Guide because I have given you excerpts from Fiske in this chat session.
 
-When I say, 'Ask Fiske' in a prompt, I want you to tell me what the Fiske guide says about a topic, based on the information I have provided you from Fiske earlier in this session. In other words, 'Ask Fiske' is short for 'Ask the Fiske Guide, and respond using the information I've provided you from the Fiske Guide earlier in our session.' If you are responding with information that is not from Fiske, then say the information is not from Fiske.
-
-Be concise. I want to get a short and thorough answer from you. Your goal is to save me time by giving me just the information I'm looking for according to the Fiske Guide. Respond in a writing style that is easy to read (for example, use short sentences). However, it's important that you don't miss any important facts. I don't want to open the actual Fiske Guide and see you didn't tell me a salient point about the question I asked you. On a scale from one to ten, where one is most concise and ten is least concise, your conciseness level is set to one.
-
-Here are examples:
-Prompt 1: 'Ask Fiske, how do students get around in Davis.'
-Response 1: 'According to Fiske, UC Davis students use bikes.'
-
-Prompt 2: 'Ask Fiske, what part of the country do Brandeis students come from?'
-Response 2: 'According to Fiske, most Brandeis students are from the coasts.'
-
-Prompt 3: 'Ask Fiske, is Tufts similar to UC Davis?'
-Response 3: 'According to Fiske, Tufts isn't in the list of the overlap schools. However, I know from my training data that UC Davis often considered similar to Tufts.'
 ----------------
 {context}
 {chat_history}
@@ -70,7 +60,7 @@ messages = [
 qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 # Set Streamlit page configuration
-st.set_page_config(page_title="Canonical.chat Demo. Fiske Guide To Colleges", layout='wide')
+st.set_page_config(page_title="Canonical.chat Demo", layout='wide')
 # Initialize session states
 # st.session_state["temp"] = ""
 if "generated" not in st.session_state:
@@ -124,14 +114,24 @@ def new_chat():
 
 @st.cache_data(show_spinner=False)
 def getretriever():
-  with open('./resources/fiske.txt', 'rb') as uploaded_file:
+  faiss_index = faiss.IndexFlatL2(1536)
+  PDFReader = download_loader("PDFReader")
+
+  loader = PDFReader()
+  documents = loader.load_data(file=Path('./resources/progit.pdf'))
+  vector_store = FaissVectorStore(faiss_index=faiss_index)
+  storage_context = StorageContext.from_defaults(vector_store=vector_store)
+  index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+  LlamaIndexRetriever(index=index, vector_store=vector_store)
+
+  with open('./resources/progit.pdf', 'rb') as uploaded_file:
     try:
         file = read_file(uploaded_file)
     except Exception as e:
         display_file_read_error(e)
 
   chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
-  with st.spinner("Loading Fiske..."):
+  with st.spinner("Loading Let's Talk..."):
     folder_index = embed_files(
         files=[chunked_file],
         embedding=EMBEDDING,
@@ -142,7 +142,7 @@ def getretriever():
 
 # Set up the Streamlit app layout
 st.title("Canonical.chat Demo")
-st.subheader("Ask Fiske...")
+st.subheader("Let's Talk...")
 
 hide_default_format = """
        <style>
