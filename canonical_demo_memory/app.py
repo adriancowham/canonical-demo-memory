@@ -42,9 +42,21 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
 # bootstrap_caching()
 
 system_template = """
-You are a knowledgeable software developer and you work on a team with other software developers. You and your team use Git every day and you can answer any question about it. You are a Git wizard and expert.
-Use the Context below to answer questions about Git. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in the ProGit book."
+You are knowledgeable about the reference book called the Fiske Guide to Colleges. You are familiar with the Fiske Guide because I have given you excerpts from Fiske in this chat session.
+
+When I say, 'Ask Fiske' in a prompt, I want you to tell me what the Fiske guide says about a topic, based on the information I have provided you from Fiske earlier in this session. In other words, 'Ask Fiske' is short for 'Ask the Fiske Guide, and respond using the information I've provided you from the Fiske Guide earlier in our session.' If you are responding with information that is not from Fiske, then say the information is not from Fiske.
+
+Be concise. I want to get a short and thorough answer from you. Your goal is to save me time by giving me just the information I'm looking for according to the Fiske Guide. Respond in a writing style that is easy to read (for example, use short sentences). However, it's important that you don't miss any important facts. I don't want to open the actual Fiske Guide and see you didn't tell me a salient point about the question I asked you. On a scale from one to ten, where one is most concise and ten is least concise, your conciseness level is set to one.
+
+Here are examples:
+Prompt 1: 'Ask Fiske, how do students get around in Davis.'
+Response 1: 'According to Fiske, UC Davis students use bikes.'
+
+Prompt 2: 'Ask Fiske, what part of the country do Brandeis students come from?'
+Response 2: 'According to Fiske, most Brandeis students are from the coasts.'
+
+Prompt 3: 'Ask Fiske, is Tufts similar to UC Davis?'
+Response 3: 'According to Fiske, Tufts isn't in the list of the overlap schools. However, I know from my training data that UC Davis often considered similar to Tufts.'
 ----------------
 {context}
 {chat_history}
@@ -58,7 +70,7 @@ messages = [
 qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 # Set Streamlit page configuration
-st.set_page_config(page_title="Canonical.chat Demo. Let's Talk...", layout='wide')
+st.set_page_config(page_title="Canonical.chat Demo. Fiske Guide To Colleges", layout='wide')
 # Initialize session states
 # st.session_state["temp"] = ""
 if "generated" not in st.session_state:
@@ -87,7 +99,7 @@ def get_text():
         (str): The text entered by the user
     """
     input_text = st.text_input("You: ", st.session_state["input"], key="input",
-                            placeholder="Let's talk...",
+                            placeholder="Ask Fiske...",
                             on_change=clear_text,
                             label_visibility='hidden')
     input_text = st.session_state["temp"]
@@ -112,14 +124,14 @@ def new_chat():
 
 @st.cache_data(show_spinner=False)
 def getretriever():
-  with open('./resources/progit.pdf', 'rb') as uploaded_file:
+  with open('./resources/fiske.txt', 'rb') as uploaded_file:
     try:
         file = read_file(uploaded_file)
     except Exception as e:
         display_file_read_error(e)
 
   chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
-  with st.spinner("Loading book..."):
+  with st.spinner("Loading Fiske..."):
     folder_index = embed_files(
         files=[chunked_file],
         embedding=EMBEDDING,
@@ -130,7 +142,7 @@ def getretriever():
 
 # Set up the Streamlit app layout
 st.title("Canonical.chat Demo")
-st.subheader("Let's Talk...")
+st.subheader("Ask Fiske...")
 
 hide_default_format = """
        <style>
