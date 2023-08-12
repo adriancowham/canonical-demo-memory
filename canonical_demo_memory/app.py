@@ -12,21 +12,27 @@ import streamlit as st
 from langchain.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.conversation.memory import ConversationEntityMemory
-from langchain.chains.conversation.prompt import \
-    ENTITY_MEMORY_CONVERSATION_TEMPLATE
+from langchain.chains.conversation.prompt import ENTITY_MEMORY_CONVERSATION_TEMPLATE
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts.chat import (ChatPromptTemplate,
-                                    HumanMessagePromptTemplate,
-                                    SystemMessagePromptTemplate)
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
+from ui import (
+    display_file_read_error,
+    is_file_valid,
+    is_open_ai_key_valid,
+    is_query_valid,
+    wrap_doc_in_html,
+)
 
 from canonical_demo_memory.core.caching import bootstrap_caching
 from canonical_demo_memory.core.chunking import chunk_file
 from canonical_demo_memory.core.embedding import embed_files
 from canonical_demo_memory.core.parsing import read_file
 from canonical_demo_memory.core.qa import query_folder
-from ui import (display_file_read_error, is_file_valid, is_open_ai_key_valid,
-                is_query_valid, wrap_doc_in_html)
 
 # EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
@@ -42,8 +48,10 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
 # bootstrap_caching()
 
 system_template = """
+You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook, you assign this textbook to your students.
+Your are currently sitting in your office during office hours, enjoying a conversation about The Little Seagull Handbook with one of your students.
 Use the context below to answer questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in the book, Let's Talk.. by Andrea Lunsford."
+"I'm sorry, but I can't find the answer to your question in, The Little Seagull Handbook."
 ----------------
 {context}
 {chat_history}
@@ -57,7 +65,7 @@ messages = [
 qa_prompt = ChatPromptTemplate.from_messages(messages)
 
 # Set Streamlit page configuration
-st.set_page_config(page_title="Canonical.chat Demo. Let's Talk...", layout='wide')
+st.set_page_config(page_title="Canonical.chat Demo. The Little Seagull Handbook", layout='wide')
 # Initialize session states
 # st.session_state["temp"] = ""
 if "generated" not in st.session_state:
@@ -86,7 +94,7 @@ def get_text():
         (str): The text entered by the user
     """
     input_text = st.text_input("You: ", st.session_state["input"], key="input",
-                            placeholder="Let's talk...",
+                            placeholder="Ask The Little Seagull...",
                             on_change=clear_text,
                             label_visibility='hidden')
     input_text = st.session_state["temp"]
@@ -111,7 +119,7 @@ def new_chat():
 
 @st.cache_data(show_spinner=False)
 def getretriever():
-  with open("./resources/lets-talk.pdf", 'rb') as uploaded_file:
+  with open("./resources/little-seagull.pdf", 'rb') as uploaded_file:
     try:
         file = read_file(uploaded_file)
     except Exception as e:
@@ -129,7 +137,7 @@ def getretriever():
 
 # Set up the Streamlit app layout
 st.title("Canonical.chat Demo")
-st.subheader("Let's Talk...")
+st.subheader("The Little Seagull Handbook")
 
 hide_default_format = """
        <style>
