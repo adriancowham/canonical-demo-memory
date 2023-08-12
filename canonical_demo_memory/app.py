@@ -112,7 +112,7 @@ def new_chat():
 
 @st.cache_data(show_spinner=False)
 def getretriever():
-  with open("./resources/LetsTalk.pdf", 'rb') as uploaded_file:
+  with open("./resources/letstalk.pdf", 'rb') as uploaded_file:
     try:
         file = read_file(uploaded_file)
     except Exception as e:
