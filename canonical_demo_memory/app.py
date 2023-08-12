@@ -42,9 +42,8 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
 # bootstrap_caching()
 
 system_template = """
-You are a knowledgeable software developer and you work on a team with other software developers. You and your team use Git every day and you can answer any question about it. You are a Git wizard and expert.
-Use the Context below to answer questions about Git. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in the ProGit book."
+Use the context below to answer questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
+"I'm sorry, but I can't find the answer to your question in the book, Let's Talk.. by Andrea Lunsford."
 ----------------
 {context}
 {chat_history}
