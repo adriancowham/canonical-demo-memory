@@ -4,15 +4,11 @@ The code creates a web application using Streamlit, a Python library for buildin
 """
 
 import os
-import re
 from typing import Any, Dict
 
 # Import necessary libraries
 import streamlit as st
-from langchain.callbacks import get_openai_callback
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chains.conversation.memory import ConversationEntityMemory
-from langchain.chains.conversation.prompt import ENTITY_MEMORY_CONVERSATION_TEMPLATE
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import (
@@ -20,21 +16,12 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from ui import (
-    display_file_read_error,
-    is_file_valid,
-    is_open_ai_key_valid,
-    is_query_valid,
-    wrap_doc_in_html,
-)
+from ui import display_file_read_error
 
-from canonical_demo_memory.core.caching import bootstrap_caching
 from canonical_demo_memory.core.chunking import chunk_file
 from canonical_demo_memory.core.embedding import embed_files
 from canonical_demo_memory.core.parsing import read_file
-from canonical_demo_memory.core.qa import query_folder
 
-# EMBEDDING = "openai"
 VECTOR_STORE = "faiss"
 MODEL = "openai"
 EMBEDDING = "openai"
@@ -45,7 +32,6 @@ USE_VERBOSE = True
 class AnswerConversationBufferMemory(ConversationBufferMemory):
   def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
     return super(AnswerConversationBufferMemory, self).save_context(inputs,{'response': outputs['answer']})
-# bootstrap_caching()
 
 system_template = """
 You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook, you assign this textbook to your students.
@@ -56,15 +42,11 @@ Use the context below to answer questions. You must only use the Context to answ
 {context}
 {chat_history}
 """
-
-# Create the chat prompt templates
 messages = [
   SystemMessagePromptTemplate.from_template(system_template),
   HumanMessagePromptTemplate.from_template("{question}")
 ]
 qa_prompt = ChatPromptTemplate.from_messages(messages)
-
-# Set Streamlit page configuration
 st.set_page_config(page_title="Canonical.chat Demo. The Little Seagull Handbook", layout='wide')
 # Initialize session states
 # st.session_state["temp"] = ""
@@ -85,37 +67,13 @@ def clear_text():
     st.session_state["temp"] = st.session_state["input"]
     st.session_state["input"] = ""
 
-# Define function to get user input
 def get_text():
-    """
-    Get the user input text.
-
-    Returns:
-        (str): The text entered by the user
-    """
     input_text = st.text_input("You: ", st.session_state["input"], key="input",
                             placeholder="Ask The Little Seagull...",
                             on_change=clear_text,
                             label_visibility='hidden')
     input_text = st.session_state["temp"]
     return input_text
-
-
-    # Define function to start a new chat
-def new_chat():
-    """
-    Clears session state and starts a new chat.
-    """
-    save = []
-    for i in range(len(st.session_state['generated'])-1, -1, -1):
-        save.append("User:" + st.session_state["past"][i])
-        save.append("Bot:" + st.session_state["generated"][i])
-    st.session_state["stored_session"].append(save)
-    st.session_state["generated"] = []
-    st.session_state["past"] = []
-    st.session_state["input"] = ""
-    st.session_state.entity_memory.store = {}
-    st.session_state.entity_memory.buffer.clear()
 
 @st.cache_data(show_spinner=False)
 def getretriever():
@@ -135,56 +93,27 @@ def getretriever():
     )
     return folder_index.index.as_retriever(verbose=True, search_type="similarity", search_kwargs={"k": 10})
 
+def getanswer(question, chat):
+  output = chat({"question": question})
+  output = output["answer"]
+  st.session_state.past.append(question)
+  st.session_state.generated.append(output)
+  return output
+
 # Set up the Streamlit app layout
 st.title("Canonical.chat Demo")
 st.subheader("The Little Seagull Handbook")
 
-hide_default_format = """
-       <style>
-       #MainMenu {visibility: hidden; }
-       footer {visibility: hidden;}
-       </style>
-       """
-st.markdown(hide_default_format, unsafe_allow_html=True)
-
 # Read API from Streamlit secrets
 API_KEY = os.environ["OPENAI_API_KEY"]
-
-# Session state storage would be ideal
-if API_KEY:
-  # Create an OpenAI instance
-  llm = ChatOpenAI(
-          openai_api_key=API_KEY,
-          model_name=MODEL,
-          verbose=True)
-
-# if 'loaded' not in st.session_state:
-#   st.session_state.loaded = 'loaded'
-#   with open('./resources/progit.pdf', 'rb') as uploaded_file:
-#     try:
-#         file = read_file(uploaded_file)
-#     except Exception as e:
-#         display_file_read_error(e)
-
-#   chunked_file = chunk_file(file, chunk_size=300, chunk_overlap=0)
-
-#   folder_index = None
-#   with st.spinner("Indexing document...this may take a while."):
-#       folder_index = embed_files(
-#           files=[chunked_file],
-#           embedding=EMBEDDING,
-#           vector_store=VECTOR_STORE,
-#           openai_api_key=API_KEY,
-#       )
-#       # Create a ConversationEntityMemory object if not already created
-#       if 'entity_memory' not in st.session_state:
-#         st.session_state.entity_memory = ConversationEntityMemory(llm=llm, k=K )
+llm = ChatOpenAI(
+        openai_api_key=API_KEY,
+        model_name=MODEL,
+        verbose=True)
 
 retriever = getretriever()
-# Create a ConversationEntityMemory object if not already created
 if 'entity_memory' not in st.session_state:
   st.session_state.entity_memory = AnswerConversationBufferMemory(memory_key="chat_history", return_messages=True)
-# Create the ConversationChain object with the specified configuration
 chat = ConversationalRetrievalChain.from_llm(
   llm,
   retriever=retriever,
@@ -192,26 +121,27 @@ chat = ConversationalRetrievalChain.from_llm(
   memory=st.session_state.entity_memory,
   verbose=USE_VERBOSE,
   combine_docs_chain_kwargs={"prompt": qa_prompt})
-# chat.rephrase_question = True
 
-# Conversation = ConversationChain(
-#         llm=llm,
-#         prompt=ENTITY_MEMORY_CONVERSATION_TEMPLATE,
-#         memory=st.session_state.entity_memory
-#     )
+with st.sidebar:
+  if st.button("How do I use this book?"):
+    getanswer("How do I use this book?", chat)
+  if st.button("What are some strategies for writing a first draft?"):
+    getanswer("What are some strategies for writing a first draft?", chat)
+  if st.button("How do I find sources for my research paper?"):
+    getanswer("How do I find sources for my research paper?", chat)
+  if st.button("When I'm citing a source in text, can I just write the page number? Provide examples."):
+    getanswer("When I'm citing a source in text, can I just write the page number? Provide examples.", chat)
+  if st.button('Do I say, "I wish I was a dolphin" or "I wish I were a dolphin"?'):
+    getanswer('Do I say, "I wish I was a dolphin" or "I wish I were a dolphin"?', chat)
+  if st.button("How do I punctuate dialogue? Provide examples of different methods."):
+    getanswer("How do I punctuate dialogue? Provide examples of different methods.", chat)
 
-# Get the user input
 user_input = get_text()
-# Generate the output using the ConversationChain object and the user input, and add the input/output to the session
 if user_input:
-    with get_openai_callback() as cb:
-      output = chat({"question": user_input})
-      output = output["answer"]
-      st.session_state.past.append(user_input)
-      st.session_state.generated.append(output)
+  getanswer(user_input, chat)
 
 with st.expander("Conversation", expanded=True):
-    for i in range(len(st.session_state['generated'])-1, -1, -1):
-        st.info(st.session_state["past"][i])
-        st.success(st.session_state["generated"][i], icon="🤖")
+  for i in range(len(st.session_state['generated'])-1, -1, -1):
+    st.info(st.session_state["past"][i])
+    st.success(st.session_state["generated"][i], icon="🤖")
 
