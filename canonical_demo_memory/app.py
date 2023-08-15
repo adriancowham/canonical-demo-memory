@@ -44,7 +44,7 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
 
 system_template = """
 Use the context below to answer questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in the book, Let's Talk... by Andrea Lunsford."
+"I'm sorry, but I can't find the answer to your question in the book, 'Let's Talk...,' by Andrea Lunsford."
 ----------------
 {context}
 {chat_history}
