@@ -32,7 +32,7 @@ VECTOR_STORE = "faiss"
 MODEL = "openai"
 EMBEDDING = "openai"
 MODEL = "gpt-3.5-turbo-16k"
-K = 5
+K = 10
 USE_VERBOSE = True
 
 # Set Streamlit page configuration
@@ -92,7 +92,7 @@ def getretriever(_llm):
     except Exception as e:
         display_file_read_error(e)
 
-  chunked_file = chunk_file(file, chunk_size=1024, chunk_overlap=0)
+  chunked_file = chunk_file(file, chunk_size=512, chunk_overlap=0)
   with st.spinner("Loading book..."):
     folder_index = embed_files(
         files=[chunked_file],
@@ -101,11 +101,11 @@ def getretriever(_llm):
         openai_api_key=API_KEY,
     )
     vector_retriever = folder_index.index.as_retriever(verbose=True, search_type="similarity", search_kwargs={"k": K})
-    return MultiQueryRetriever.from_llm(retriever=vector_retriever, llm=_llm)
+    # return MultiQueryRetriever.from_llm(retriever=vector_retriever, llm=_llm)
+    return vector_retriever
 
 def getanswer(question, chat):
   output = chat({"question": question})
-  print(output)
   output = output["answer"]
   st.session_state.past.append(question)
   st.session_state.generated.append(output)
@@ -151,14 +151,14 @@ with st.sidebar:
     getanswer("How can I make myself be heard?", chat)
   if st.button("How can I connect with people I disagree with?"):
     getanswer("How can I connect with people I disagree with?", chat)
+  if st.button("What's the name of this book?"):
+    getanswer("What's the name of this book?", chat)
+  if st.button("How do I capture attention?"):
+    getanswer("How do I capture attention?", chat)
 
 user_input = get_text()
 if user_input:
   output = getanswer(user_input, chat)
-  print(output)
-  output = output["answer"]
-  st.session_state.past.append(user_input)
-  st.session_state.generated.append(output)
 
 with st.expander("Conversation", expanded=True):
   for i in range(len(st.session_state['generated'])-1, -1, -1):
