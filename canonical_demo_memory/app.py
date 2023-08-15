@@ -18,7 +18,6 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from ui import display_file_read_error
 
 from canonical_demo_memory.core.chunking import chunk_file
@@ -101,7 +100,6 @@ def getretriever(_llm):
         openai_api_key=API_KEY,
     )
     vector_retriever = folder_index.index.as_retriever(verbose=True, search_type="similarity", search_kwargs={"k": K})
-    # return MultiQueryRetriever.from_llm(retriever=vector_retriever, llm=_llm)
     return vector_retriever
 
 def getanswer(question, chat):
