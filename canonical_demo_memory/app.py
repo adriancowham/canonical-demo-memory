@@ -123,8 +123,6 @@ chat = ConversationalRetrievalChain.from_llm(
   combine_docs_chain_kwargs={"prompt": qa_prompt})
 
 with st.sidebar:
-  if st.button("How do I use this book?"):
-    getanswer("How do I use this book?", chat)
   if st.button("What are some strategies for writing a first draft?"):
     getanswer("What are some strategies for writing a first draft?", chat)
   if st.button("How do I find sources for my research paper?"):
