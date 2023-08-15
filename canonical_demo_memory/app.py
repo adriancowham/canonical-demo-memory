@@ -141,18 +141,16 @@ chat = ConversationalRetrievalChain.from_llm(
 
 with st.sidebar:
   st.title("Suggested Questions")
-  if st.button("Can I be a better listener?"):
-    getanswer("Can I be a better listener?", chat)
-  if st.button("Is Draymond Green mentioned in this book?"):
-    getanswer("Is Draymond Green mentioned in this book?", chat)
   if st.button("How can I make myself be heard?"):
     getanswer("How can I make myself be heard?", chat)
   if st.button("How can I connect with people I disagree with?"):
     getanswer("How can I connect with people I disagree with?", chat)
-  if st.button("What's the name of this book?"):
-    getanswer("What's the name of this book?", chat)
-  if st.button("How do I capture attention?"):
-    getanswer("How do I capture attention?", chat)
+  if st.button("How do I come up with ideas for my essay?"):
+    getanswer("How do I come up with ideas for my essay?", chat)
+  if st.button("My professor reviewed my first draft. She circled a sentence and said I need to support it more. How do I do that?"):
+    getanswer("My professor reviewed my first draft. She circled a sentence and said I need to support it more. How do I do that?", chat)
+  if st.button("How do I cite a Reddit thread?"):
+    getanswer("How do I cite a Reddit thread?", chat)
 
 user_input = get_text()
 if user_input:
