@@ -6,7 +6,6 @@ The code creates a web application using Streamlit, a Python library for buildin
 import os
 from typing import Any, Dict
 
-# Import necessary libraries
 import streamlit as st
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
@@ -26,7 +25,7 @@ VECTOR_STORE = "faiss"
 MODEL = "openai"
 EMBEDDING = "openai"
 MODEL = "gpt-3.5-turbo-16k"
-K = 100
+K = 3
 USE_VERBOSE = True
 
 class AnswerConversationBufferMemory(ConversationBufferMemory):
@@ -34,11 +33,12 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
     return super(AnswerConversationBufferMemory, self).save_context(inputs,{'response': outputs['answer']})
 
 system_template = """
-You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook, you assign this textbook to your students.
-Your are currently sitting in your office during office hours, enjoying a conversation about The Little Seagull Handbook with one of your students.
-Use the context below to answer questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
+You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook and you assign this textbook to your students.
+Your are currently sitting in your office during office hours, enjoying an espresso and having a conversation about The Little Seagull Handbook with one of your students. Your student is asking you questions about the book.
+Use the context below to answer the questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
 "I'm sorry, but I can't find the answer to your question in, The Little Seagull Handbook." All answers must be in English unless you are explicitly asked to translate to a different language.
-----------------
+
+Here is the context:
 {context}
 {chat_history}
 """
@@ -91,7 +91,7 @@ def getretriever():
         vector_store=VECTOR_STORE,
         openai_api_key=API_KEY,
     )
-    return folder_index.index.as_retriever(verbose=True, search_type="similarity", search_kwargs={"k": 10})
+    return folder_index.index.as_retriever(verbose=True, search_type="similarity", search_kwargs={"k": K})
 
 def getanswer(question, chat):
   output = chat({"question": question})
