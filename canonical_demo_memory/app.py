@@ -3,12 +3,16 @@ This is a Python script that serves as a frontend for a conversational AI model 
 The code creates a web application using Streamlit, a Python library for building interactive web apps.
 """
 
+import json
 import os
-from typing import Any, Dict
+import urllib.parse
+from typing import Any, Dict, List, Mapping, Optional
 
+import requests
 import streamlit as st
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
+from langchain.llms.base import LLM
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -28,11 +32,41 @@ MODEL = "gpt-3.5-turbo-16k"
 K = 3
 USE_VERBOSE = True
 
+class LlamaLLM(LLM):
+    model_path: str
+    # llm: Llama
+
+    @property
+    def _llm_type(self) -> str:
+        return "llama-cpp-python"
+
+    def __init__(self, model_path: str, **kwargs: Any):
+        model_path = model_path
+        # llm = Llama(model_path=model_path)
+        super().__init__(model_path=model_path, **kwargs)
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        print("calling")
+        postData = {"prompt": prompt, "mirostat": 0, "top_k": 40, "top_p": 0.5, "temperature": 0.9, "max_tokens": 100, "n_predict": 100, "stream": False}
+        response = requests.request("POST", urllib.parse.urljoin(self.model_path, "/completion"), data=json.dumps(postData))
+        response_data = response.json()
+        print(response_data)
+        return response_data["content"]
+        # response = self.llm(prompt, stop=stop or [])
+        # return response["choices"][0]["text"]
+
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        return {"model_path": self.model_path}
+
+llm = LlamaLLM("http://localhost:8080")
+
 class AnswerConversationBufferMemory(ConversationBufferMemory):
   def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
     return super(AnswerConversationBufferMemory, self).save_context(inputs,{'response': outputs['answer']})
 
 system_template = """
+### Instruction:
 You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook and you assign this textbook to your students.
 Your are currently sitting in your office during office hours, enjoying an espresso and having a conversation about The Little Seagull Handbook with one of your students. Your student is asking you questions about the book.
 Use the context below to answer the questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
@@ -106,10 +140,10 @@ st.subheader("The Little Seagull Handbook")
 
 # Read API from Streamlit secrets
 API_KEY = os.environ["OPENAI_API_KEY"]
-llm = ChatOpenAI(
-        openai_api_key=API_KEY,
-        model_name=MODEL,
-        verbose=True)
+# llm = ChatOpenAI(
+#         openai_api_key=API_KEY,
+#         model_name=MODEL,
+#         verbose=True)
 
 retriever = getretriever()
 if 'entity_memory' not in st.session_state:
