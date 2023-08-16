@@ -35,15 +35,15 @@ K = 10
 USE_VERBOSE = True
 
 # Set Streamlit page configuration
-st.set_page_config(page_title="Canonical.chat Demo. Let's Talk...", layout='wide')
+st.set_page_config(page_title="Canonical.chat Demo. Design by Fire: Resistance, Co-Creation, and Retreat in the Pyrocene", layout='wide')
 
 class AnswerConversationBufferMemory(ConversationBufferMemory):
   def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
     return super(AnswerConversationBufferMemory, self).save_context(inputs,{'response': outputs['answer']})
 
 system_template = """
-Use the context below to answer questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in the book, 'Let's Talk...,' by Andrea Lunsford." All answers must be in English unless you are explicitly asked to translate to a different language.
+Use the context below to answer questions. You must only use the Context to answer questions. If I ask you about 'the book' or 'this book' or similar references, then answer using the Context. If you cannot find the answer from the Context below, you must respond with
+"I'm sorry, but I can't find the answer to your question in the book, 'Design by Fire,' by Emily Elizabeth Schlickman and Brett Milligan." All answers must be in English unless you are explicitly asked to translate to a different language.
 ----------------
 {context}
 {chat_history}
@@ -77,7 +77,7 @@ def clear_text():
 
 def get_text():
     input_text = st.text_input("You: ", st.session_state["input"], key="input",
-                            placeholder="Let's talk...",
+                            placeholder="Type your question here...",
                             on_change=clear_text,
                             label_visibility='hidden')
     input_text = st.session_state["temp"]
@@ -85,7 +85,7 @@ def get_text():
 
 @st.cache_resource(show_spinner=False)
 def getretriever(_llm):
-  with open("./resources/lets-talk.pdf", 'rb') as uploaded_file:
+  with open("./resources/design-by-fire.pdf", 'rb') as uploaded_file:
     try:
         file = read_file(uploaded_file)
     except Exception as e:
@@ -111,7 +111,7 @@ def getanswer(question, chat):
 
 # Set up the Streamlit app layout
 st.title("Canonical.chat Demo")
-st.subheader("Let's Talk...")
+st.subheader("Design by Fire: Resistance, Co-Creation, and Retreat in the Pyrocene by Emily Elizabeth Schlickman and Brett Milligan")
 
 hide_default_format = """
        <style>
@@ -141,16 +141,21 @@ chat = ConversationalRetrievalChain.from_llm(
 
 with st.sidebar:
   st.title("Suggested Questions")
-  if st.button("How can I make myself be heard?"):
-    getanswer("How can I make myself be heard?", chat)
-  if st.button("How can I connect with people I disagree with?"):
-    getanswer("How can I connect with people I disagree with?", chat)
-  if st.button("How do I come up with ideas for my essay?"):
-    getanswer("How do I come up with ideas for my essay?", chat)
-  if st.button("My professor reviewed my first draft. She circled a sentence and said I need to support it more. How do I do that?"):
-    getanswer("My professor reviewed my first draft. She circled a sentence and said I need to support it more. How do I do that?", chat)
-  if st.button("How do I cite a Reddit thread?"):
-    getanswer("How do I cite a Reddit thread?", chat)
+  if st.button("What are the main factors and trends discussed in the book that contribute to the changing behavior of wildfires?"):
+    getanswer("What are the main factors and trends discussed in the book that contribute to the changing behavior of wildfires?", chat)
+  if st.button("How does the book explore the relationship between fire and different landscapes, such as wilderness and urban areas?"):
+    getanswer("How does the book explore the relationship between fire and different landscapes, such as wilderness and urban areas?", chat)
+  if st.button("What are the three approaches to designing with fire that the book presents?"):
+    getanswer("What are the three approaches to designing with fire that the book presents?", chat)
+  if st.button("What is the significance of the concept of the Pyrocene in the book?"):
+    getanswer("What is the significance of the concept of the Pyrocene in the book?", chat)
+  if st.button("How does the book address the issue of climate change and its impact on wildfires?"):
+    getanswer("How does the book address the issue of climate change and its impact on wildfires?", chat)
+
+  if st.button("What examples of design case studies from around the world are included in this book?"):
+    getanswer("What examples of design case studies from around the world are included in this book?", chat)
+  if st.button("How does the book speculate on future scenarios and potential futures related to fire?"):
+    getanswer("How does the book speculate on future scenarios and potential futures related to fire?", chat)
 
 user_input = get_text()
 if user_input:
