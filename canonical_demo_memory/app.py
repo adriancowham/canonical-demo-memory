@@ -33,10 +33,8 @@ class AnswerConversationBufferMemory(ConversationBufferMemory):
     return super(AnswerConversationBufferMemory, self).save_context(inputs,{'response': outputs['answer']})
 
 system_template = """
-You are a college English Professor, you teach english composition. Your textbook is The Little Seagull Handbook and you assign this textbook to your students.
-Your are currently sitting in your office during office hours, enjoying an espresso and having a conversation about The Little Seagull Handbook with one of your students. Your student is asking you questions about the book.
-Use the context below to answer the questions. You must only use the Context to answer questions. If you cannot find the answer from the Context below, you must respond with
-"I'm sorry, but I can't find the answer to your question in, The Little Seagull Handbook." All answers must be in English unless you are explicitly asked to translate to a different language.
+The context below contains excerpts from The Little Seagull Handbook. You must only use the information in the context below to build a response. If there is not enough information to formulate a response, you must respond with
+"I'm sorry, but I can't find the answer to your question in, The Little Seagull Handbook."
 
 Here is the context:
 {context}
