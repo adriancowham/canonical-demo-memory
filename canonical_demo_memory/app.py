@@ -96,6 +96,7 @@ def getanswer(question, chat):
   output = output["answer"]
   st.session_state.past.append(question)
   st.session_state.generated.append(output)
+  st.session_state["temp"] = ""
   return output
 
 # Set up the Streamlit app layout
@@ -121,6 +122,7 @@ chat = ConversationalRetrievalChain.from_llm(
   combine_docs_chain_kwargs={"prompt": qa_prompt})
 
 with st.sidebar:
+  st.title("Suggested Questions")
   if st.button("What are some strategies for writing a first draft?"):
     getanswer("What are some strategies for writing a first draft?", chat)
   if st.button("How do I find sources for my research paper?"):
