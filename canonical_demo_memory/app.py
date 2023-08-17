@@ -107,6 +107,7 @@ def getanswer(question, chat):
   output = output["answer"]
   st.session_state.past.append(question)
   st.session_state.generated.append(output)
+  st.session_stat["temp"] = ""
   return output
 
 # Set up the Streamlit app layout
